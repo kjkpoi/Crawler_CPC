@@ -1,21 +1,43 @@
 require 'mysql2'
+require 'active_record'
+
+class DB_Naver < ActiveRecord::Base
+    self.table_name = 'crawling_naver'
+end
+
+class DB_Google < ActiveRecord::Base
+    self.table_name = 'crawling_google'
+end
+
+class DB_Error < ActiveRecord::Base
+    self.table_name = 'error_naver'
+end
+
 
 class DatabaseManager
 
     def initialize(url, id, pw, db)
-        @client = Mysql2::Client.new(:host => url, :username => id, :password => pw, :database => db)
+        ActiveRecord::Base.establish_connection(:adapter => :mysql,
+                                                :database => db,
+                                                :username => id,
+                                                :password => pw,
+                                                :host => url,
+                                                :encoding => 'utf8')
     end
 
-    def push_crawling_info(start_date, keyword, ad_info)
-        @client.query("INSERT INTO crawling_naver(start_time, keyword, powerlink_jobplanet, powerlink_jobkorea,
-                        powerlink_saramin, powerlink_incruit, bizsite_jobplanet, bizsite_jobkorea, bizsite_saramin, bizsite_incruit)
-                        Values ('#{start_date}', '#{keyword}', '#{ad_info['powerlink'][0]}', '#{ad_info['powerlink'][1]}', '#{ad_info['powerlink'][2]}', '#{ad_info['powerlink'][3]}',
-                        '#{ad_info['bizsite'][0]}', '#{ad_info['bizsite'][1]}', '#{ad_info['bizsite'][2]}', '#{ad_info['bizsite'][3]}')")
+    def insert_naver_crawling_info(data)
+        db_naver = DB_Naver.new(data)
+        db_naver.save!
     end
 
-    def push_error(start_date, keyword, error_message)
-        @client.query("INSERT INTO error_naver(start_time, keyword, error_msg)
-                        Values ('#{start_date}', '#{keyword}', '#{error_message}')")
+    def insert_google_crawling_info(data)
+        db_google = DB_Google.new(data)
+        db_google.save!
+    end
+
+    def insert_error(data)
+        db_error = DB_Error.new(data)
+        db_error.save!
     end
 
 end
