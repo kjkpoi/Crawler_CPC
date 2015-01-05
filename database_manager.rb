@@ -1,10 +1,12 @@
 require 'active_record'
 
-
 class DB_Error < ActiveRecord::Base
-    self.table_name = 'error_naver'
+    self.table_name = 'crawling_error'
 end
 
+class DB_missing_job < ActiveRecord::Base
+    self.table_name = 'crawling_missing_job'
+end
 
 class DatabaseManager
 
@@ -22,4 +24,8 @@ class DatabaseManager
         db_error.save!
     end
 
+    def insert_missing_job(data)
+        db_missing_job = DB_missing_job.new(data)
+        db_missing_job.save!
+    end
 end

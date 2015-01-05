@@ -13,7 +13,6 @@ class HtmlParser
 
         url = @base_url + encoded_keyword
         @referer = url
-        puts url
         uri = URI(url)
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true

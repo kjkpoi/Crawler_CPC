@@ -12,6 +12,10 @@ class CrawlerRunner
     end
 
     private
+    def runner_setting(parser, db_manager, start_time, keyword_list)
+
+    end
+
     def runner(parser, db_manager)
         start_time = DateTime.now.strftime('%Y-%m-%d %T')
         error_info = Hash.new
@@ -58,8 +62,7 @@ class CrawlerRunner
 
                 index = index + 1
 
-                sleep(5 + rand(8))
-
+                sleep_policy(index)
             rescue SystemExit, Interrupt
                 logger.warn('Crawler SystemExit, Interrupt')
                 raise
@@ -77,6 +80,18 @@ class CrawlerRunner
                 db_manager.insert_error(error_info)
                 break
             end
+        end
+    end
+
+    def sleep_policy(index)
+        if index % 50 == 0
+            log.info("index -> #{index}, hash size -> #{@keyword_list.size}")
+            sleep(20 + rand(20))
+        elsif index % 501 == 0
+            log.info("index -> #{index}, hash size -> #{@keyword_list.size}")
+            sleep(300 + rand(50))
+        else
+            sleep(10 + rand(10))
         end
     end
 
