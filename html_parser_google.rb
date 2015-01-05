@@ -1,7 +1,7 @@
 require 'nokogiri'
 require 'net/http'
 
-load 'HtmlParser.rb'
+load 'html_parser.rb'
 
 class HtmlParserGoogle < HtmlParser
 
