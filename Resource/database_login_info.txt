@@ -1,4 +1,5 @@
-id  crawler
-pw  jobplanet
-url localhost
-db AD_Crawler
+username  crawler
+password  jobplanet
+host localhost
+port 3306
+database AD_Crawler
