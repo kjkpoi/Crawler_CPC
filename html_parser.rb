@@ -8,57 +8,99 @@ class HtmlParser
     end
 
     #TODO: Add Random Header
-    def make_page(keyword)
+    def make_page(keyword, use_ssl, request_header)
         encoded_keyword = URI::encode(keyword).gsub(/&/, '%26')
 
         url = @base_url + encoded_keyword
         @referer = url
         uri = URI(url)
         http = Net::HTTP.new(uri.host, uri.port)
-        http.use_ssl = true
+
+        if use_ssl
+            http.use_ssl = true
+        end
+
         request = Net::HTTP::Get.new(uri.request_uri)
-        request.initialize_http_header(make_header)
+        request.initialize_http_header(request_header)
         response = http.request(request)
         Nokogiri::HTML(response.body)
-=begin
-        request.each_header { |key, value|
-            puts "#{key} : #{value}"
-        }
-
-        puts response.code       # => '200'
-        puts response.message    # => 'OK'
-        puts response.class.name # => 'HTTPOK'
-        puts response['header-here']
-        puts "Headers: #{response.to_hash.inspect}"
-        puts response.body
-=end
     end
 
-    def make_header
-#        cookie_head1 = (0...rand(30) + 10).map {(65 + rand(2) * 32 + rand(26)).chr}.join
-#        cookie_message1 = (0...rand(50) + 10).map {(48 + (rand(2) * (49 + rand(17))) + rand(9)).chr}.join
-#        cookie_head2 = (0...rand(40) + 20).map { (48 + rand(79)).chr }.join
-#        cookie_message2 = (0...rand(60) + 15).map { (48 + rand(79)).chr }.join
+    def get_related_keywords(page, deny_list, selector)
+        result = Array.new
+        page.css(selector).each do |keyword|
+            flag = true
+            deny_list.each { |deny_keyword|
+                if keyword.text.strip.include? deny_keyword
+                    flag = false
+                    break
+                end
+            }
 
-        if rand(2) == 0
-            accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-        else
-            accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            if flag
+                result.push(keyword.text.strip.gsub(/\s+/, ''))
+            end
         end
 
-        if rand(2) == 0
-            user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
-        else
-            user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0'
-        end
-
-        headers = { 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-#                    'Accept-Encoding' => 'gzip, deflate',
-                    'Accept-Language' => 'ko-kr,ko;q=0.8,en-us;q=0.5,en;q=0.3',
-                    'Connection' => 'keep-alive',
-                    'Host' => 'www.google.co.kr',
-                    'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0'}
-        headers
+        result
     end
+
+    def get_adlink_info_naver(page, company_list)
+        if company_list.size <= 0
+            puts 'company list error'
+            return
+        end
+
+        result = Hash.new
+        page.css('div.ad_section').each do |section|
+            caption_text = '??'
+            if section.text.include? '파워링크'
+                caption_text = 'powerlink'
+            elsif section.text.include? '비즈사이트'
+                caption_text = 'bizsite'
+            end
+
+            company_list.each do |company|
+                result["#{caption_text}_#{company}"] = 0
+                if section.text.include? company
+                    result["#{caption_text}_#{company}"] = 1
+                end
+            end
+        end
+
+        result
+    end
+
+    def get_adlink_info_google(page, company_list)
+        if company_list.size <= 0
+            puts 'company list error'
+            return
+        end
+        result = Hash.new
+
+        company_list.each do |company|
+            result[company] = 0
+        end
+
+        page.css('li.ads-ad').each do |section|
+            company_list.each do |company|
+                if section.text.include? company
+                    result[company] = 1
+                end
+            end
+        end
+
+        result
+    end
+
+    def get_adlink_info_google_keyword(page)
+        result = ''
+        page.css('li.ads-ad cite').each do |section|
+            result = result + section.text + '; '
+        end
+
+        result
+    end
+
 
 end
