@@ -35,8 +35,8 @@ class CrawlerRunnerNaver < CrawlerRunner
 
                 @logger.info("------------- Start '#{current_keyword}' ---------------")
                 @logger.info("Hash Size -> '#{keyword_list.length}'")
-                current_page = parser.make_page(current_keyword, true, make_header)
-                ad_info =  parser.get_adlink_info(current_page, company_list)
+                current_page = parser.make_page(current_keyword, false, make_header)
+                ad_info =  parser.get_adlink_info_naver(current_page, company_list)
 
                 is_valuable = ad_info.values.include? 1
 
@@ -66,6 +66,7 @@ class CrawlerRunnerNaver < CrawlerRunner
                     end
                 end
 
+
                 index = index + 1
                 sleep_policy(index)
             rescue SystemExit, Interrupt
@@ -77,12 +78,13 @@ class CrawlerRunnerNaver < CrawlerRunner
                 if e.to_s.include? '403'
                     @logger.error("403 HTTP Request, Stop Crawling, #{e}, #{e.backtrace}")
                 end
-
                 error_info[:start_time] = start_time
                 error_info[:error_time] = DateTime.now.strftime('%Y-%m-%d %T')
                 error_info[:keyword] = current_keyword
                 error_info[:error_msg] = "#{e}, #{e.backtrace}"
                 db_manager.insert_error(error_info)
+
+                save_missingjobs(db_manager, keyword_list, start_time, index)
                 break
             end
         end
